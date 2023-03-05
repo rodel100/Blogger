@@ -1,16 +1,27 @@
-from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import JsonResponse
 from rest_framework import generics
 from .serializers import TranscribeSerializer
 from .models import VideoTranscribe
-# import whisper
+import whisper
 
-# model = whisper.load_model("large")
-# result = model.transcribe("audio.mp3")
+# Create your views here
+def upload_video(request):
+    model = whisper.load_model("medium")
+    video_file = request.FILES.get('video_file')
+    title = request.POST.get('title')
 
-# # Create your views here.
-# def main(request):
-#     return HttpResponse(result["text"])
+    transcription_text = model.transcribe(video_file)
+
+    transcription = VideoTranscribe(
+        title=title,
+        transcription_text=transcription_text,
+        video_file=video_file,
+    )
+    transcription.save()
+
+    return JsonResponse(TranscribeSerializer(transcription).data)
+
 class TranscribeView(generics.CreateAPIView):
     queryset = VideoTranscribe.objects.all
     serializer_class = TranscribeSerializer
+    
